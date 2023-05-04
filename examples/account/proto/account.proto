@@ -12,3 +12,7 @@ message RegisterAccountRequest {
   string email = 2;
   string password = 3;
 }
+
+message RegisterAccountResponse {
+  uint64 ID = 1;
+}

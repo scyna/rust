@@ -1,3 +1,4 @@
+mod error;
 mod proto;
 mod register_account;
 

@@ -19,4 +19,12 @@ impl Error {
         ret.message = String::from(self.message);
         return ret;
     }
+
+    pub fn code(&self) -> i32 {
+        self.code
+    }
+
+    pub fn message(&self) -> String {
+        self.message.to_string()
+    }
 }

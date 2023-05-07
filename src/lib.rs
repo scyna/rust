@@ -3,6 +3,7 @@ mod engine;
 mod error;
 mod path;
 mod proto;
+mod session;
 mod utils;
 
 pub use self::engine::Engine;

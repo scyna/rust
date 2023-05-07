@@ -1,8 +1,8 @@
 use crate::error::*;
 use crate::proto;
-use scyna::endpoint::*;
+use scyna::*;
 
-pub fn handler(ctx: &mut Context, request: &proto::RegisterAccountRequest) -> scyna::Error {
+pub fn handler(ctx: &mut endpoint::Context, request: &proto::RegisterAccountRequest) -> Error {
     ctx.info("Receive RegisterAccount request");
 
     if request.email.len() == 0 {
@@ -16,6 +16,5 @@ pub fn handler(ctx: &mut Context, request: &proto::RegisterAccountRequest) -> sc
     let mut response = proto::RegisterAccountResponse::new();
     response.ID = 0;
 
-    ctx.response(response);
-    scyna::OK
+    ctx.ok(response)
 }

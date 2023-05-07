@@ -1,43 +1,60 @@
-use crate::{endpoint, error, proto};
+use crate::{endpoint, error, proto, utils};
+use core::time;
 use nats;
 use protobuf::Message;
-use std::str;
+use std::{io, str, sync::Arc, thread};
+
+// pub struct MyStruct {
+//     value: i32,
+// }
+
+// impl MyStruct {
+//     pub fn my_method(&self) {
+//         let closure = move || {
+//             println!("The value is: {}", self.value); // sử dụng self ở đây
+//         };
+//         closure();
+//     }
+// }
 
 pub struct Engine {
-    connection: nats::Connection,
+    connection: Arc<nats::Connection>,
 }
 
 impl Engine {
-    pub fn new(url: &str, _secret: &str) -> std::io::Result<Engine> {
+    pub fn init(url: &str, _secret: &str) -> io::Result<Engine> {
         println!("Creating Engine from {url}");
-        let nc = nats::connect("demo.nats.io")?;
-        Ok(Engine { connection: nc })
+        let nc = nats::connect("nats://127.0.0.1:4222")?;
+        Ok(Engine { connection: Arc::new(nc) })
     }
 
     pub fn start(&self) {
-        //todo!()
+        /* FIXME: replace with sigint/sigterm */
+        let ten_millis = time::Duration::from_millis(10);
+        loop {
+            thread::sleep(ten_millis);
+        }
     }
 
-    pub fn stop(&self) {
-        //todo!()
-    }
-
-    pub fn register_endpoint<T>(&self, url: &str, handler: endpoint::Handler<T>) -> std::io::Result<()>
-    where
-        T: protobuf::MessageFull,
-    {
+    pub fn register_endpoint<T: protobuf::MessageFull>(&self, url: &str, handler: endpoint::Handler<T>) -> io::Result<()> {
         println!("Register Endpoint: {}", url);
-        self.connection.queue_subscribe(url, "API")?.with_handler(move |msg| {
-            let request = proto::Request::parse_from_bytes(msg.data.as_slice()).unwrap();
+
+        let connection = self.connection.clone();
+        connection.queue_subscribe(utils::subscribe_url(url).as_str(), "API")?.with_handler(move |msg: nats::Message| {
+            let request = proto::Request::parse_from_bytes(msg.data.as_slice())?;
             let message: T;
 
             if request.JSON {
-                message = protobuf_json_mapping::parse_from_str(str::from_utf8(request.Body.as_slice()).unwrap()).unwrap();
+                let result = protobuf_json_mapping::parse_from_str::<T>(str::from_utf8(request.Body.as_slice()).unwrap());
+                match result {
+                    Ok(m) => message = m,
+                    Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
+                }
             } else {
-                message = T::parse_from_bytes(request.Body.as_slice()).unwrap();
+                message = T::parse_from_bytes(request.Body.as_slice())?;
             }
 
-            let mut ctx = endpoint::Context::new();
+            let mut ctx = endpoint::Context::new(connection.clone(), msg.reply.unwrap());
             let err = handler(&mut ctx, &message);
 
             if err.code() == error::OK.code() {

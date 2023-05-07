@@ -4,19 +4,6 @@ use nats;
 use protobuf::Message;
 use std::{io, str, sync::Arc, thread};
 
-// pub struct MyStruct {
-//     value: i32,
-// }
-
-// impl MyStruct {
-//     pub fn my_method(&self) {
-//         let closure = move || {
-//             println!("The value is: {}", self.value); // sử dụng self ở đây
-//         };
-//         closure();
-//     }
-// }
-
 pub struct Engine {
     connection: Arc<nats::Connection>,
 }

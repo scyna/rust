@@ -12,10 +12,11 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(conn: Arc<nats::Connection>, reply: String) -> Context {
-        Context { connection: conn, flushed: false, reply: reply }
+    pub fn new(connection: Arc<nats::Connection>, reply: String) -> Context {
+        Context { connection, flushed: false, reply }
     }
     pub fn info(&self, message: &str) {
+        /* TODO */
         println!("{}", message)
     }
 
@@ -32,8 +33,7 @@ impl Context {
         let mut response = proto::Response::new();
         response.SessionID = 0;
         response.Code = status;
-        let result = data.write_to_bytes();
-        match result {
+        match data.write_to_bytes() {
             Ok(body) => {
                 response.Body = body;
                 self.connection.publish(&self.reply, response.write_to_bytes().unwrap()).unwrap();

@@ -9,3 +9,4 @@ edition = "2021"
 nats = "0.24.0"
 protobuf = "3.2.0"
 protobuf-json-mapping = "3.2.0"
+reqwest = { version = "0.11", features = ["blocking"] }

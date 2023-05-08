@@ -1,23 +1,24 @@
-use crate::{
-    endpoint, error, path, proto,
-    session::{self, Session},
-    utils,
-};
+use crate::{endpoint, error, generator::Generator, path, proto, session::Session, utils};
 use core::time;
-use nats::{self};
+use nats;
 use protobuf::Message;
 use reqwest::StatusCode;
 
-use std::{io, str, sync::Arc, thread};
+use std::{
+    io, str,
+    sync::{Arc, Mutex},
+    thread,
+};
 
 pub struct Engine {
     module: &'static str,
     session: Arc<Session>,
     connection: Arc<nats::Connection>,
+    id: Mutex<Generator>,
 }
 
 impl Engine {
-    pub fn init(url: &str, module: &'static str, secret: &str) -> io::Result<Arc<Engine>> {
+    pub fn init(url: &str, module: &'static str, secret: &str) -> io::Result<Engine> {
         println!("Creating Engine from {url}");
 
         match Engine::send_create_session(url, module, secret) {
@@ -25,11 +26,12 @@ impl Engine {
                 println!("SessionID={}", response.SessionID);
 
                 let nc = nats::connect("nats://127.0.0.1:4222")?;
-                Ok(Arc::new(Engine {
+                Ok(Engine {
                     module,
                     session: Arc::new(Session::new(response.SessionID)),
                     connection: Arc::new(nc),
-                }))
+                    id: Mutex::new(Generator::new()),
+                })
             }
             Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
         }

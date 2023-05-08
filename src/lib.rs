@@ -1,6 +1,7 @@
 pub mod endpoint;
 mod engine;
 mod error;
+mod generator;
 mod path;
 mod proto;
 mod session;
